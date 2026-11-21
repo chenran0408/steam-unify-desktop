@@ -18,6 +18,7 @@ PROJECT = APP / "SteamUnify.csproj"
 VERSION = ElementTree.parse(PROJECT).findtext("PropertyGroup/Version")
 TITLE = f"SteamUnify-{VERSION}"
 RESOURCES = ("category_model.json", "genres_zh.json", "official_names.json", "tag_names_zh.json")
+DOC_ASSETS = ("docs/images/library.png", "docs/images/translation.png", "docs/translation-sources-2.8.1.csv")
 TESTS = {
     "suggestion-tests": ("SuggestionsTests.csproj",),
     "io-tests": ("IoTests.csproj",),
@@ -28,6 +29,7 @@ TESTS = {
 
 def source_files():
     files = {n: GUIDES / n for n in ("README.md", "BUILD.md", "LICENSE", "pack.py")}
+    files.update({name: GUIDES / name for name in DOC_ASSETS})
     owned = [PROJECT, APP / "App.ico", APP / "app.manifest", *APP.glob("*.xaml"), *APP.glob("*.cs")]
     owned += [APP / "Resources" / name for name in RESOURCES]
     for folder, names in TESTS.items():
@@ -89,6 +91,7 @@ def portable_files(publish):
         raise ValueError(f"Use a clean single-file publish. Missing: {expected - actual}. Unexpected: {actual - expected}.")
     files = {name: publish / name for name in expected}
     files.update({name: GUIDES / name for name in ("README.md", "LICENSE")})
+    files.update({name: GUIDES / name for name in DOC_ASSETS})
     files.update(runtime_notices())
     return files
 
