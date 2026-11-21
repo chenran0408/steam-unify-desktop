@@ -1,10 +1,10 @@
-# Steam 统译 2.8.1
+# Steam 统译 2.8.4
 
 给 Steam 游戏补上中文名，再把游戏放入便于查找的收藏集。这个 Windows x64 便携版已在 Windows 11 x64 上验证，解压即可使用。
 
 **[下载 Windows x64 便携版](https://github.com/chenran0408/steam-unify-desktop/releases/latest)**。在下载页选择文件名以 `-win-x64.zip` 结尾的压缩包，完整解压后双击 `SteamUnify.exe`。
 
-2.8.1 新增 44 条离线译名，并用核实过的译名替换部分机翻建议。[查看本批译名与来源](docs/translation-sources-2.8.1.csv)
+2.8.4 扩充 Steam 热门游戏、高口碑作品和经典系列的离线译名。已有手动译名和跳过设置优先，自动建议优先使用小黑盒游戏详情页的中文名，再使用 Steam 和离线词典。[本批小黑盒译名](docs/heybox-name-sources-2.8.4.csv) · [往年作品译名](docs/expanded-game-name-sources-2.8.3.csv) · [热门榜译名](docs/popular-game-name-sources-2.8.2.csv)
 
 ![选中两款游戏后，可直接分类、翻译或预览更改](docs/images/library.png)
 

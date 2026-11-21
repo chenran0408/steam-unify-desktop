@@ -43,6 +43,15 @@ try
     Require(engine.Recommend(game, tags).Source == "机器翻译", "provenance");
     var official = engine.Recommend(game with { Localized = new() { ["schinese"] = "官方名称" } },tags);
     Require(official.Name == "官方名称" && official.Source == "Steam 内置", "official overrides cached machine result");
+    var cyberpunk = game with { AppId = 1091500, Name = "Cyberpunk 2077",
+        Localized = new() { ["schinese"] = "赛博朋克 2077" } };
+    var box = engine.Recommend(cyberpunk, tags);
+    Require(box.Name == "赛博朋克2077" && box.Source == "小黑盒", "HeyBox overrides Steam's localized title");
+    engine.SetManual(cyberpunk.AppId, "", null);
+    Require(engine.Recommend(cyberpunk, tags) is { Name: "", NameLocked: true }, "manual name skip overrides HeyBox");
+    engine.ClearManual(cyberpunk.AppId);
+    Require(await engine.LookupAsync(cyberpunk, null, default) == box.Name && fallbackStats.Count == 3,
+        "bundled HeyBox title resolves without network lookup");
     Require(await engine.RetrieveDescriptionAsync(game,null,default) && fallbackStats.Count == 3, "description reuse");
     int requests = 0;
     var china = new SuggestionLookup((uri, proxy, token) =>

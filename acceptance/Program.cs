@@ -197,7 +197,7 @@ internal static class Program
     }
     static void CopyApp(string publish,string app)
     {
-        foreach(string file in new[]{"official_names.json","category_model.json","genres_zh.json","tag_names_zh.json"})
+        foreach(string file in new[]{"official_names.json","heybox_names.json","category_model.json","genres_zh.json","tag_names_zh.json"})
             Assert(File.Exists(Path.Combine(publish,"Resources",file)),"published package is missing Resources/"+file);
         Directory.CreateDirectory(app);
         foreach(var file in Directory.EnumerateFiles(publish,"*",SearchOption.AllDirectories))

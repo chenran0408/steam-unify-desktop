@@ -27,6 +27,7 @@ public sealed partial class Suggestions
     private readonly object saveGate = new();
     private static readonly SavedApp EmptyPreferences = new();
     private readonly Dictionary<int,SavedApp> apps;
+    private readonly Dictionary<int,string> heyboxNames;
     private readonly Dictionary<int,string> names;
     private readonly Dictionary<int,string> tagNames;
     private readonly Dictionary<int,string> genres;
@@ -40,6 +41,7 @@ public sealed partial class Suggestions
     {
         this.network = network;
         string resources = Path.Combine(AppContext.BaseDirectory, "Resources");
+        heyboxNames = ReadMap(resources, "heybox_names.json");
         names = ReadMap(resources, "official_names.json");
         tagNames = ReadMap(resources, "tag_names_zh.json");
         genres = ReadMap(resources, "genres_zh.json");
@@ -151,6 +153,7 @@ public sealed partial class Suggestions
     private (string Name, string Source) ChooseName(CacheGame game, SavedApp prefs)
     {
         if (prefs.ManualName != null) return (prefs.ManualName, "手动");
+        if (heyboxNames.TryGetValue(game.AppId, out var heyboxName)) return (heyboxName, "小黑盒");
         foreach (string key in new[] { "schinese", "sc_schinese" })
             if (game.Localized.TryGetValue(key, out var official) && ContainsHan(official))
                 return (official.Trim(), "Steam 内置");
