@@ -164,6 +164,27 @@ public sealed partial class Suggestions
         return ("", "");
     }
 
+    internal IReadOnlyList<(string Name,string Source)> NameChoices(CacheGame game)
+    {
+        var prefs = Get(game.AppId);
+        var choices = new List<(string Name,string Source)>();
+        void Add(string? name, string source)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return;
+            string trimmed = name.Trim();
+            int existing = choices.FindIndex(choice => choice.Name == trimmed);
+            if (existing < 0) choices.Add((trimmed, source));
+            else if (!choices[existing].Source.Split(" · ").Contains(source))
+                choices[existing] = (trimmed, choices[existing].Source + " · " + source);
+        }
+        Add(heyboxNames.GetValueOrDefault(game.AppId), "小黑盒");
+        foreach (string key in new[] { "schinese", "sc_schinese" })
+            if (game.Localized.TryGetValue(key, out var name) && ContainsHan(name)) Add(name, "Steam 内置");
+        Add(names.GetValueOrDefault(game.AppId), "离线词典");
+        Add(prefs.OnlineName,prefs.OnlineSource ?? "联网译名");
+        return choices;
+    }
+
     public Suggestion Recommend(CacheGame game, IReadOnlyDictionary<int,string> tagNames, string? originalName = null) =>
         Recommend(game, tagNames, originalName, Get(game.AppId));
 

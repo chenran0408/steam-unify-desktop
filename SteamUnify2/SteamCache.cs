@@ -17,7 +17,7 @@ public static class SteamCache
     const uint V29 = 0x07564429, V30 = 0x0756442A;
     static readonly UTF8Encoding Utf8 = new(false, true);
 
-    static string[] Files(string root)
+    static string[] Files(string root, bool required = true)
     {
         root = Path.GetFullPath(root);
         var dir = Path.Combine(root, "appcache", "appinfo");
@@ -35,18 +35,61 @@ public static class SteamCache
             var path = Path.Combine(root, folder, "appinfo.vdf");
             if (File.Exists(path)) return [path];
         }
+        if (!required) return [];
         throw new FileNotFoundException("未找到 Steam 游戏信息缓存。请先启动 Steam 并打开游戏库。");
     }
 
-    public static List<CacheGame> Read(string steamRoot, List<string> warnings, IReadOnlySet<int>? appIds=null)
+    internal sealed class Snapshot(string root, Dictionary<string, byte[]> contents)
+    {
+        internal string[] Paths()
+        {
+            var current = Files(root, required: false);
+            // A different cache layout may have been published by Steam while it was closing.
+            // Use it as a unit rather than mixing its indexes with old shards.
+            if (current.Any(path => !contents.ContainsKey(path))) return current;
+            return contents.Keys.ToArray();
+        }
+
+        internal byte[]? OriginalForMissing(string path) =>
+            !File.Exists(path) && contents.TryGetValue(path, out var bytes) ? bytes : null;
+
+        internal void RecoverMissing()
+        {
+            foreach (string path in Paths())
+            {
+                if (OriginalForMissing(path) is not { } bytes) continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                string staged = path + ".steamunify-recover-" + Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    using (var output = new FileStream(staged, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        output.Write(bytes);
+                        output.Flush(true);
+                    }
+                    File.Move(staged, path);
+                }
+                finally { if (File.Exists(staged)) File.Delete(staged); }
+            }
+        }
+    }
+
+    internal static Snapshot Capture(string root) => new(root, Files(root, required: false)
+        .ToDictionary(path => path, CacheFile.ReadBytes, StringComparer.OrdinalIgnoreCase));
+
+    public static List<CacheGame> Read(string steamRoot, List<string> warnings, IReadOnlySet<int>? appIds=null) =>
+        Read(steamRoot, warnings, appIds, null);
+
+    internal static List<CacheGame> Read(string steamRoot, List<string> warnings, IReadOnlySet<int>? appIds, Snapshot? snapshot)
     {
         var games = new Dictionary<int, CacheGame>();
         int readable = 0;
-        foreach (var path in Files(steamRoot))
+        foreach (var path in snapshot?.Paths() ?? Files(steamRoot))
         {
             try
             {
-                var cache = CacheFile.Load(path);
+                var cache = snapshot?.OriginalForMissing(path) is { } prior
+                    ? new CacheFile(prior, IsShard(path)) : CacheFile.Load(path);
                 var parsed = new List<CacheGame>();
                 foreach (var entry in cache.Entries)
                 {
@@ -155,13 +198,15 @@ public static class SteamCache
         readonly string[] keys;
         int tableStart, dataStart, entriesEnd, firstIndex, indexStride;
 
-        internal static CacheFile Load(string path)
+        internal static CacheFile Load(string path) => new(ReadBytes(path), IsShard(path));
+
+        internal static byte[] ReadBytes(string path)
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             Require(stream.Length <= int.MaxValue, "缓存文件过大。");
             byte[] bytes = new byte[(int)stream.Length];
             stream.ReadExactly(bytes);
-            return new CacheFile(bytes, IsShard(path));
+            return bytes;
         }
 
         internal CacheFile(byte[] bytes, bool isShard)

@@ -30,6 +30,8 @@ public static partial class SteamLibrary
         var candidates = !string.IsNullOrWhiteSpace(preferredRoot) ? new[] { preferredRoot } : new[]
         {
             Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string,
+            Path.GetDirectoryName((Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamExe", null) as string) ?? ""),
+            Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath", null) as string,
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam"),
             @"D:\Steam", @"E:\Steam"
         };
@@ -129,15 +131,29 @@ public static partial class SteamLibrary
         Action<string,int,int>? progress=null)
     {
         if (edits.Count == 0) return "";
-        return WithClosedClient(location,restartSteam,()=>ApplyClosed(location,edits,appData,progress),
-            progress==null?null:()=>progress("等待 Steam 退出",0,0));
+        SteamCache.Snapshot? snapshot = null;
+        return WithClosedClient(location,restartSteam,() =>
+        {
+            snapshot?.RecoverMissing();
+            return ApplyClosed(location,edits,appData,progress);
+        }, () =>
+        {
+            if (edits.Any(edit => edit.Name != null)) snapshot = CaptureCache(location,progress);
+            progress?.Invoke("等待 Steam 退出",0,0);
+        });
     }
 
     public static string ApplyRecommended(SteamLocation location,string appData,bool restartSteam,IReadOnlyList<RecommendedEdit> edits,
-        bool autoAccount,Action beforeClientShutdown,Func<IReadOnlyList<RecommendedEdit>> readFreshPlan,Action<string,int,int>? progress=null)
+        bool autoAccount,Action beforeClientShutdown,Func<IReadOnlyList<RecommendedEdit>> readFreshPlan,Action<string,int,int>? progress=null) =>
+        ApplyRecommended(location,appData,restartSteam,edits,autoAccount,beforeClientShutdown,_ => readFreshPlan(),progress);
+
+    internal static string ApplyRecommended(SteamLocation location,string appData,bool restartSteam,IReadOnlyList<RecommendedEdit> edits,
+        bool autoAccount,Action beforeClientShutdown,Func<SteamCache.Snapshot?,IReadOnlyList<RecommendedEdit>> readFreshPlan,
+        Action<string,int,int>? progress=null)
     {
         if (edits.Count == 0) return "";
         var shown = edits.ToDictionary(row=>row.Edit.AppId,row=>row with { CurrentGroups=row.CurrentGroups.ToArray() });
+        SteamCache.Snapshot? snapshot = null;
         void VerifyAccount()
         {
             if (!Directory.Exists(Path.Combine(location.Root,"userdata",location.Account)) ||
@@ -148,7 +164,7 @@ public static partial class SteamLibrary
         {
             VerifyAccount();
             progress?.Invoke("核对游戏库",0,0);
-            var fresh = readFreshPlan();
+            var fresh = readFreshPlan(snapshot);
             const string changed = "游戏库或整理建议已变化，请查看刷新后的内容。";
             if (fresh.Count != shown.Count) throw new StaleRecommendationException(changed);
             foreach (var row in fresh)
@@ -158,14 +174,22 @@ public static partial class SteamLibrary
                     throw new StaleRecommendationException(changed);
             }
             VerifyAccount();
+            if (fresh.Any(row => row.Edit.Name != null)) snapshot?.RecoverMissing();
             return ApplyClosed(location,fresh.Select(row=>row.Edit).ToList(),appData,progress);
         }, () =>
         {
             VerifyAccount();
             beforeClientShutdown();
             VerifyAccount();
+            snapshot = CaptureCache(location,progress);
             progress?.Invoke("等待 Steam 退出",0,0);
         });
+    }
+
+    private static SteamCache.Snapshot CaptureCache(SteamLocation location,Action<string,int,int>? progress)
+    {
+        progress?.Invoke("正在保留 Steam 缓存",0,0);
+        return SteamCache.Capture(location.Root);
     }
 
     private static string ApplyClosed(SteamLocation location,IReadOnlyList<LibraryEdit> edits,string appData,Action<string,int,int>? progress)
@@ -197,7 +221,7 @@ public static partial class SteamLibrary
             if (running)
             {
                 beforeClientShutdown?.Invoke();
-                using var request = Process.Start(new ProcessStartInfo(exe, "-shutdown") { UseShellExecute = false, WorkingDirectory = location.Root });
+                using var request = Process.Start(new ProcessStartInfo(exe, "-shutdown") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = location.Root });
                 var timer = Stopwatch.StartNew();
                 do
                 {

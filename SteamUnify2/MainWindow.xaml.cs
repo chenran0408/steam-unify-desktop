@@ -18,7 +18,7 @@ public partial class MainWindow : Window
 {
     private readonly string dataDirectory;
     private DesktopOptions options;
-    private readonly Suggestions suggestions;
+    private Suggestions suggestions;
     private SteamLocation? location;
     private string? allGamesCollectionName;
     private LibraryInfo? library;
@@ -119,7 +119,7 @@ public partial class MainWindow : Window
         AutomationProperties.SetName(CreateAllGamesButton,exists?$"Steam 动态收藏「{allGamesCollectionName}」已就绪":"创建「全部游戏」动态收藏");
     }
     private sealed record ScanResult(SteamLocation Location,LibraryInfo Info,List<GameRow> Rows,List<string> Warnings,string? AllGamesCollectionName);
-    private ScanResult ReadLibrary(IReadOnlySet<int>? selectedIds=null)
+    private ScanResult ReadLibrary(IReadOnlySet<int>? selectedIds=null,SteamCache.Snapshot? snapshot=null)
     {
         var steam=SteamLibrary.Detect(options.Root,options.Account);
         var info=SteamLibrary.Inspect(steam);
@@ -132,7 +132,7 @@ public partial class MainWindow : Window
             if(selectedIds!=null)libraryIds.IntersectWith(selectedIds);
             appIds=libraryIds;
         }
-        var entries=SteamCache.Read(steam.Root,warnings,appIds);
+        var entries=SteamCache.Read(steam.Root,warnings,appIds,snapshot);
         var originals=SteamLibrary.OriginalNames(steam,dataDirectory,entries.ToDictionary(game=>game.AppId));
         var collections=new SteamCollections(steam,dataDirectory);
         var memberships=collections.Memberships();
@@ -507,7 +507,8 @@ public partial class MainWindow : Window
         }
         while(true)
         {
-            var edit=await TaskDialog.Edit(this,selection,remaining.Count>0);
+            var candidates=selection.Count==1?suggestions.NameChoices(selection[0].Game):[];
+            var edit=await TaskDialog.Edit(this,selection,remaining.Count>0,candidates);
             if(edit==null)return;
             bool saved=false;
             await WorkAsync("正在保存手动设置…",async ()=>{
@@ -676,16 +677,50 @@ public partial class MainWindow : Window
                 StatusText.Text="找不到这次写入的快照。可在「备份与还原」中查看其他备份。";
                 return;
             }
-            var choice=await TaskDialog.ChooseBackup(this,backups,preferredPath);
+            var choice=await TaskDialog.ChooseBackup(this,backups,preferredPath,candidateCancellation==null);
             if(choice==null){StatusText.Text=previousStatus;return;}
+            if(choice.Action is TaskDialog.RecoveryAction.Export or TaskDialog.RecoveryAction.Import)
+            {
+                await TransferPortableAsync(steam,choice.Action,previousStatus);
+                return;
+            }
             StatusText.Text="正在还原 Steam 文件…";
             string? undoBackup=null;
-            if(choice.Undo) undoBackup=await Task.Run(()=>SteamLibrary.UndoManaged(steam,dataDirectory,options.RestartSteam));
+            bool undo=choice.Action==TaskDialog.RecoveryAction.Undo;
+            if(undo) undoBackup=await Task.Run(()=>SteamLibrary.UndoManaged(steam,dataDirectory,options.RestartSteam));
             else await Task.Run(()=>SteamLibrary.Restore(steam,choice.Path!,options.RestartSteam,dataDirectory));
             lastWriteBackup=string.IsNullOrEmpty(undoBackup)?null:(steam,undoBackup);
             await LoadAsync();
-            StatusText.Text=choice.Undo?(string.IsNullOrEmpty(undoBackup)?"当前没有可撤销的写入。":"已撤销可恢复的统译写入。"):"已还原所选备份，并重新读取游戏库。";
+            StatusText.Text=undo?(string.IsNullOrEmpty(undoBackup)?"当前没有可撤销的写入。":"已撤销可恢复的统译写入。"):"已还原所选备份，并重新读取游戏库。";
         });
+    }
+    private async Task TransferPortableAsync(SteamLocation steam,TaskDialog.RecoveryAction action,string previousStatus)
+    {
+        if(action==TaskDialog.RecoveryAction.Export)
+        {
+            var picker=new SaveFileDialog{Title="导出迁移包",Filter="Steam 统译迁移包 (*.zip)|*.zip",
+                FileName=$"Steam统译迁移-{DateTime.Now:yyyyMMdd}.zip"};
+            if(picker.ShowDialog(this)!=true){StatusText.Text=previousStatus;return;}
+            StatusText.Text="正在导出迁移包…";
+            var count=await Task.Run(()=>SteamLibrary.ExportPortable(steam,dataDirectory,picker.FileName));
+            StatusText.Text=$"已导出设置、整理记录和 {count} 份 Steam 备份。";
+            return;
+        }
+        var open=new OpenFileDialog{Title="选择 Steam 统译迁移包",Filter="Steam 统译迁移包 (*.zip)|*.zip"};
+        if(open.ShowDialog(this)!=true || !await TaskDialog.ConfirmPortableImport(this,Path.GetFileName(open.FileName)))
+        {
+            StatusText.Text=previousStatus;
+            return;
+        }
+        StatusText.Text="正在核对迁移包…";
+        string recovery="";
+        var imported=await Task.Run(()=>SteamLibrary.ImportPortable(steam,dataDirectory,open.FileName,out recovery,
+            folder=>{_ = DesktopOptions.Load(folder);_ = new Suggestions(folder);}));
+        options=DesktopOptions.Load(dataDirectory);
+        suggestions=new Suggestions(dataDirectory);
+        candidateReceipt=null;
+        await LoadAsync();
+        StatusText.Text=$"已导入设置、整理记录和 {imported} 份备份 · 导入前副本 {Path.GetFileName(recovery)}";
     }
     private async Task<bool> OnlineAsync(List<GameRow> targets,bool descriptions)
     {

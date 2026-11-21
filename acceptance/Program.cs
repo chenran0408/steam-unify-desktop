@@ -1272,6 +1272,64 @@ internal static class Program
             "late candidate replaced the newer write result or modified Steam without confirmation");
         Log("Injected local JSON in the same WPF source: mixed translation wrote a trusted name, then showed one current-batch machine review beside the receipt. Review started unchecked, cancel retained it, explicit approval wrote only that name, and a later machine completion did not replace an intervening classification result.");
     }
+    static void SourceAndPortable(string root,string data,string baseDir)
+    {
+        var initial=FilesIn(root);
+        void OpenSelector(string title,string name)
+        {
+            El? dialog=null, field=null;
+            Until(()=>{
+                dialog=Windows().FirstOrDefault(el=>el.Current.Name==title);
+                if(dialog==null)return false;
+                field=dialog.FindAll(TreeScope.Descendants,new PropertyCondition(El.ControlTypeProperty,ControlType.Edit))
+                    .Cast<El>().FirstOrDefault(el=>!el.Current.IsOffscreen &&
+                        (el.Current.AutomationId=="1001" || el.Current.Name.StartsWith("文件名")) &&
+                        el.TryGetCurrentPattern(ValuePattern.Pattern,out _));
+                return field!=null;
+            },"native "+title);
+            field!.SetFocus();
+            var value=(ValuePattern)field.GetCurrentPattern(ValuePattern.Pattern);
+            value.SetValue(name);
+            Until(()=>value.Current.Value==name,"file picker has the requested path");
+            System.Windows.Forms.SendKeys.SendWait("{ENTER}");
+        }
+        var game=Id(Id(main,"LibraryGrid"),"RowEdit_646570");
+        Click(game);
+        var edit=EditorFor("Slay the Spire");
+        var list=Id(edit,"NameCandidates");
+        ((ExpandCollapsePattern)list.GetCurrentPattern(ExpandCollapsePattern.Pattern)).Expand();
+        Until(()=>IsVisible(edit,El.NameProperty,"杀戮尖塔 · 小黑盒 · 离线词典"),"HeyBox and dictionary share one title");
+        Assert(Id(edit,"CopyAppId").Current.IsEnabled,"copy AppID is reachable in the editor");
+        var candidate=Button(edit,"备选中文名 · Steam 内置");
+        Click(candidate);
+        Until(()=>((ValuePattern)Id(edit,"NameInput").GetCurrentPattern(ValuePattern.Pattern)).Current.Value=="备选中文名" &&
+            On(Id(edit,"PinName")),"candidate selected for manual preference");
+        Screenshot(edit,Path.Combine(baseDir,"name-choices.png"));
+        Click(Id(edit,"EditSave"));
+        Until(()=>Ready() && File.ReadAllText(Path.Combine(data,"suggestions.v2.json")).Contains("ManualName"),"candidate preference saved");
+
+        var bundle=Path.Combine(baseDir,"portable-export.zip");
+        MoreAction("BackupsButton");
+        var backups=Window("备份与还原");
+        Screenshot(backups,Path.Combine(baseDir,"portable-page.png"));
+        Click(Id(backups,"ExportPortable"));
+        OpenSelector("导出迁移包",bundle);
+        Until(()=>File.Exists(bundle) && Ready(),"migration package exported");
+        Click(Id(Id(main,"LibraryGrid"),"RowEdit_646570"));
+        edit=EditorFor("Slay the Spire");
+        ((ValuePattern)Id(edit,"NameInput").GetCurrentPattern(ValuePattern.Pattern)).SetValue("待覆盖的名称");
+        Click(Id(edit,"EditSave"));Until(Ready,"modified the saved name");
+        MoreAction("BackupsButton");backups=Window("备份与还原");
+        Click(Id(backups,"ImportPortable"));
+        OpenSelector("选择 Steam 统译迁移包",bundle);
+        Click(Id(Window("导入迁移包"),"ConfirmPortableImport"));
+        Until(()=>Ready() && Id(main,"StatusText").Current.Name.Contains("已导入") &&
+            Directory.GetFiles(Path.Combine(data,"backups","portable"),"*.zip").Length==1,"migration package imported and before-copy saved");
+        Assert(TreeText(Id(main,"LibraryGrid")).Contains("备选中文名") && initial.SequenceEqual(FilesIn(root)),
+            "import restores the selected name while Steam bytes remain identical");
+        Log("Candidate panel shows both conflicting sources inside the editor; portable ZIP round-trips saved preferences.");
+    }
+
     static void Run(string publish,string baseDir,string variant)
     {
         var root=Path.GetFullPath(Path.Combine(baseDir,variant switch { "advanced"=>"v29", "undo"=>"v30", _=>variant }));
@@ -1305,7 +1363,7 @@ internal static class Program
         try
         {
             main=Window("Steam 统译");ActivateFixture();
-            int expected=variant switch { "tiny"=>1, "large"=>2500, "workbench"=>7, "facets" or "workspace" or "direct" or "selection" or "receipt"=>8, _=>12 };
+            int expected=variant switch { "tiny" or "extras"=>1, "large"=>2500, "workbench"=>7, "facets" or "workspace" or "direct" or "selection" or "receipt"=>8, _=>12 };
             Until(()=>Rows()==expected && Id(main,"PreviewButton").Current.IsEnabled,"waiting for "+expected+" games",35);
             Log($"{variant}: launch-to-list {clock.ElapsedMilliseconds} ms, {Rows()} rows");
             if(variant=="tiny")
@@ -1317,6 +1375,7 @@ internal static class Program
             }
             if(variant=="direct"){DirectActions(root,baseDir,data,proxy);return;}
             if(variant=="receipt"){Receipt(root,data,baseDir);return;}
+            if(variant=="extras"){SourceAndPortable(root,data,baseDir);return;}
             if(variant=="selection"){Selection(root,data,baseDir);return;}
             if(variant=="advanced"){Advanced(root,data,proxy);return;}
             if(variant=="undo"){UndoAll(root);return;}

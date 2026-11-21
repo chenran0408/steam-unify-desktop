@@ -18,7 +18,7 @@ dotnet run --project .\suggestion-tests\SuggestionsTests.csproj -c Release
 
 添加 `-- --benchmark` 可运行固定延迟的翻译测试，分别测量官方译名可提交和全部译名候选完成的时间。
 
-以下脚本使用 Python 3 标准库生成模拟 Steam 缓存。请使用空的测试目录。先生成并验证缓存样本，再用它们运行原生文件读写、备份和还原测试。
+以下脚本使用 Python 3 标准库生成模拟 Steam 缓存。请使用空的测试目录。先生成并验证缓存样本，再用它们运行原生文件读写、Steam 退出时移除缓存、跨路径 ZIP 迁移和备份还原测试。
 
 ```powershell
 dotnet build .\cache-tests\CacheTests.csproj -c Release
@@ -31,7 +31,7 @@ dotnet run --project .\io-tests\IoTests.csproj -c Release -- .\test-output\cache
 
 ```powershell
 python .\acceptance\fixtures.py .\test-output\desktop --replay
-dotnet run --project .\acceptance\Acceptance.csproj -c Release -- .\wpf-28-publish .\test-output\desktop direct selection large v29 workspace facets workbench advanced v30 undo dynamic receipt
+dotnet run --project .\acceptance\Acceptance.csproj -c Release -- .\wpf-28-publish .\test-output\desktop direct selection large v29 workspace facets workbench advanced v30 undo dynamic receipt extras
 ```
 
 动态收藏使用 Steam 的「玩过」或「从未玩过」条件。为核对筛选范围，测试将程序在模拟账号中写出的收藏记录交给 Steam 客户端随附的 `steamui/sp.js`（构建 11229305）处理。Steam 的读取、筛选和更新函数覆盖了已安装、未安装、玩过、从未玩过以及稍后加入的新条目。

@@ -34,6 +34,8 @@ try
     var meta = SteamLibrary.Inspect(loc);
     Check(meta.Owned.SetEquals([1100001]) && meta.TagNames[100]=="射击" && meta.Installed[1100001] == acf,"inspect");
     RecommendedChecks.Run(loc,data,info);
+    ShutdownChecks.Run(test,inputFile);
+    PortableChecks.Run(test,inputFile);
     ParallelStagingChecks.Run(test);
     DynamicCollectionChecks.Run(root, data);
     var bak = SteamLibrary.Apply(loc,[new(1100001,"中文\"名\\称","策略"),new(1100002,null,"策略"),new(1100003,null,"动作")],data,false);

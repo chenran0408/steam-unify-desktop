@@ -121,9 +121,11 @@ public static partial class SteamLibrary
 
     public static string UndoManaged(SteamLocation location,string appData,bool restartSteam)
     {
+        SteamCache.Snapshot? snapshot = null;
         return WithClosedClient(location,restartSteam,() =>
         {
             var writes = new Dictionary<string,byte[]?>(Paths);
+            snapshot?.RecoverMissing();
             var originals = ReadOriginals(location,appData);
             if (originals.Count != 0)
             {
@@ -148,6 +150,6 @@ public static partial class SteamLibrary
             }
             new SteamCollections(location,appData).RemoveManaged(writes);
             return Commit(location,appData,writes);
-        });
+        }, () => snapshot = SteamCache.Capture(location.Root));
     }
 }

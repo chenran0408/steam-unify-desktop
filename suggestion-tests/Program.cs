@@ -47,6 +47,10 @@ try
         Localized = new() { ["schinese"] = "赛博朋克 2077" } };
     var box = engine.Recommend(cyberpunk, tags);
     Require(box.Name == "赛博朋克2077" && box.Source == "小黑盒", "HeyBox overrides Steam's localized title");
+    var choices = engine.NameChoices(cyberpunk);
+    Require(choices[0].Name == box.Name && choices[0].Source.Contains("小黑盒") &&
+        choices.Any(choice=>choice.Name=="赛博朋克 2077" && choice.Source.Contains("Steam 内置")) &&
+        choices.Select(choice=>choice.Name).Distinct().Count()==choices.Count,"candidate list shows conflicting sources once per title");
     engine.SetManual(cyberpunk.AppId, "", null);
     Require(engine.Recommend(cyberpunk, tags) is { Name: "", NameLocked: true }, "manual name skip overrides HeyBox");
     engine.ClearManual(cyberpunk.AppId);

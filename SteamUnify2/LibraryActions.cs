@@ -181,9 +181,9 @@ public partial class MainWindow
         var shown=Baseline(plan);
         var restart=options.RestartSteam;
         bool autoAccount=string.IsNullOrWhiteSpace(options.Account);
-        IReadOnlyList<RecommendedEdit> ReadFreshPlan()
+        IReadOnlyList<RecommendedEdit> ReadFreshPlan(SteamCache.Snapshot? snapshot)
         {
-            var fresh=ReadLibrary(ids);
+            var fresh=ReadLibrary(ids,snapshot);
             if(fresh.Location!=steam)throw new StaleRecommendationException("当前 Steam 游戏库已更换。");
             return Baseline(FieldPlan(fresh.Rows,translate));
         }

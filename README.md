@@ -1,10 +1,10 @@
-# Steam 统译 2.8.4
+# Steam 统译 2.8.5
 
 给 Steam 游戏补上中文名，再把游戏放入便于查找的收藏集。这个 Windows x64 便携版已在 Windows 11 x64 上验证，解压即可使用。
 
 **[下载 Windows x64 便携版](https://github.com/chenran0408/steam-unify-desktop/releases/latest)**。在下载页选择文件名以 `-win-x64.zip` 结尾的压缩包，完整解压后双击 `SteamUnify.exe`。
 
-2.8.4 扩充 Steam 热门游戏、高口碑作品和经典系列的离线译名。已有手动译名和跳过设置优先，自动建议优先使用小黑盒游戏详情页的中文名，再使用 Steam 和离线词典。[本批小黑盒译名](docs/heybox-name-sources-2.8.4.csv) · [往年作品译名](docs/expanded-game-name-sources-2.8.3.csv) · [热门榜译名](docs/popular-game-name-sources-2.8.2.csv)
+已有手动译名和跳过设置优先，自动建议优先使用小黑盒游戏详情页的中文名，再使用 Steam 和离线词典。点击游戏名，可展开「候选译名」比较已知来源，选中后保存到整理方案。编辑页也可复制该游戏的 AppID。[本批小黑盒译名](docs/heybox-name-sources-2.8.5.csv) · [往年作品译名](docs/expanded-game-name-sources-2.8.3.csv) · [热门榜译名](docs/popular-game-name-sources-2.8.2.csv)
 
 ![选中两款游戏后，可直接分类、翻译或预览更改](docs/images/library.png)
 
@@ -40,6 +40,8 @@ Steam 已退出时，在窗口右上角点一次 **创建「全部游戏」** �
 「更多」也有重新扫描、获取简介和导出列表。联网查询使用游戏 AppID，机翻时还会发送游戏名称。
 
 ## 备份与还原
+
+在「更多 → 备份与还原」可以导出 ZIP 迁移包。它包含本地设置、整理记录和当前 Steam 账号的历史快照。换电脑时，先在新电脑登录同一个 Steam 账号，再选择「导入迁移包」。导入会把快照加入备份列表并保存一份导入前的副本。需要回退 Steam 文件时，可另外选择要还原的快照。
 
 每次写入前，程序会备份涉及的文件。想回到某次写入前的状态，请打开「更多 → 备份与还原」并选择「还原所选备份」。快照中包含的文件会整体回到当时的状态，后来对这些文件的改动也会一起回退。
 

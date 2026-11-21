@@ -293,7 +293,8 @@ internal sealed class TaskDialog : UserControl
         return await dialog.ShowAsync()?choices.Select(c=>c.Selected).OfType<ChangeLine>().ToList():null;
     }
 
-    public sealed record Recovery(bool Undo, string? Path);
+    internal enum RecoveryAction { Restore, Undo, Export, Import }
+    public sealed record Recovery(RecoveryAction Action, string? Path = null);
     internal static string BackupLabel(string path)
     {
         string leaf=Path.GetFileName(path);
@@ -307,7 +308,7 @@ internal sealed class TaskDialog : UserControl
         }
         return Directory.Exists(path)?Directory.GetCreationTime(path).ToString("yyyy年M月d日  HH:mm:ss",CultureInfo.InvariantCulture):leaf;
     }
-    public static async Task<Recovery?> ChooseBackup(MainWindow owner,List<string> backups,string? preferredPath=null)
+    public static async Task<Recovery?> ChooseBackup(MainWindow owner,List<string> backups,string? preferredPath=null,bool canTransfer=true)
     {
         var d=new TaskDialog(owner,"备份与还原");
         var layout=new DockPanel();
@@ -334,15 +335,24 @@ internal sealed class TaskDialog : UserControl
         if(backups.Count==0)layout.Children.Add(new TextBlock{Text="当前账号还没有备份。首次应用更改时会自动创建。",TextWrapping=TextWrapping.Wrap});
         else layout.Children.Add(d.Sheet(list,new Thickness(3)));
         d.Body(layout);
-        bool undo=false;
-        undoButton.Click+=(_,_)=>{undo=true;d.Finish(true);};
+        var action=RecoveryAction.Restore;
+        undoButton.Click+=(_,_)=>{action=RecoveryAction.Undo;d.Finish(true);};
+        var export=d.Action("导出迁移包",false,()=>{action=RecoveryAction.Export;d.Finish(true);});
+        AutomationProperties.SetAutomationId(export,"ExportPortable");
+        var import=d.Action("导入迁移包",false,()=>{action=RecoveryAction.Import;d.Finish(true);});
+        AutomationProperties.SetAutomationId(import,"ImportPortable");
+        export.IsEnabled=import.IsEnabled=canTransfer;
+        export.ToolTip="保存设置、整理记录和当前账号的备份";
+        import.ToolTip="导入同一 Steam 账号的设置、整理记录和备份";
         d.Cancel("关闭");
         var restore=d.Action("还原所选备份",true,()=>{
-            if(list.SelectedValue is string){undo=false;d.Finish(true);}
+            if(list.SelectedValue is string){action=RecoveryAction.Restore;d.Finish(true);}
         });
         restore.IsEnabled=backups.Count>0;
         while(await d.ShowAsync())
         {
+            if(action is RecoveryAction.Export or RecoveryAction.Import)return new Recovery(action);
+            bool undo=action==RecoveryAction.Undo;
             string? path=list.SelectedValue as string;
             var confirm=new TaskDialog(owner,undo?"撤销历次整理":"确认还原");
             confirm.Note(undo?"恢复本机由统译改过的游戏名称，并移除当前账号由统译管理的收藏集。游戏名称由本机 Steam 账号共享。":
@@ -351,10 +361,22 @@ internal sealed class TaskDialog : UserControl
             confirm.Cancel("返回");
             var approve=confirm.Action(undo?"确认撤销":"确认还原",false,()=>confirm.Finish(true));
             AutomationProperties.SetAutomationId(approve,"ConfirmRecovery");
-            if(await confirm.ShowAsync())return new Recovery(undo,path);
+            if(await confirm.ShowAsync())return new Recovery(action,path);
             if(!owner.IsVisible)return null;
         }
         return null;
+    }
+
+    public static async Task<bool> ConfirmPortableImport(MainWindow owner,string fileName)
+    {
+        var dialog=new TaskDialog(owner,"导入迁移包");
+        dialog.Note(fileName);
+        dialog.Note("导入前会保存一份当前迁移包。新设置和整理记录会覆盖同名记录，Steam 快照会加入备份列表。");
+        dialog.Form();
+        dialog.Cancel();
+        var confirm=dialog.Action("确认导入",true,()=>dialog.Finish(true));
+        AutomationProperties.SetAutomationId(confirm,"ConfirmPortableImport");
+        return await dialog.ShowAsync();
     }
 
     public sealed record ManualEdit(bool Clear,string? Name,string? Group,bool Continue=false);
@@ -388,7 +410,8 @@ internal sealed class TaskDialog : UserControl
         if(skip!=null) skip.Visibility=skipped?Visibility.Collapsed:Visibility.Visible;
     }
 
-    public static async Task<ManualEdit?> Edit(MainWindow owner,List<GameRow> rows,bool canContinue=false)
+    public static async Task<ManualEdit?> Edit(MainWindow owner,List<GameRow> rows,bool canContinue,
+        IReadOnlyList<(string Name,string Source)> candidates)
     {
         var one=rows.Count==1?rows[0]:null;
         var d=new TaskDialog(owner,one==null?$"批量编辑 {rows.Count} 款游戏":"编辑游戏");
@@ -437,6 +460,21 @@ internal sealed class TaskDialog : UserControl
             name.TextChanged+=(_,_)=>{pinName.IsChecked=true;NameCaption();};
             pinName.Checked+=(_,_)=>NameCaption();
             pinName.Unchecked+=(_,_)=>NameCaption();
+            if(candidates.Count>0)
+            {
+                var alternatives=new StackPanel{Margin=new Thickness(0,4,0,2)};
+                foreach(var candidate in candidates)
+                {
+                    var choice=QuietButton($"{candidate.Name} · {candidate.Source}");
+                    choice.HorizontalAlignment=HorizontalAlignment.Left;
+                    choice.Margin=new Thickness(0,0,0,4);
+                    choice.Click+=(_,_)=>{name.Text=candidate.Name;pinName.IsChecked=true;name.Focus();};
+                    alternatives.Children.Add(choice);
+                }
+                var expander=new Expander{Header="候选译名",Content=alternatives,Margin=new Thickness(0,5,0,2)};
+                AutomationProperties.SetAutomationId(expander,"NameCandidates");
+                d.Field(expander);
+            }
         }
         d.Label("统译收藏集");
         var group=new ComboBox{IsEditable=true,ItemsSource=Suggestions.Groups,Text=one?.Group??"",Padding=new Thickness(6,4,6,4)};
@@ -472,6 +510,21 @@ internal sealed class TaskDialog : UserControl
         var reset=QuietButton("恢复自动建议");
         reset.Click+=(_,_)=>{result=new(true,null,null);d.Finish(true);};
         DockPanel.SetDock(reset,Dock.Right);formActions.Children.Add(reset);
+        if(one!=null)
+        {
+            var copy=QuietButton("复制 AppID");
+            AutomationProperties.SetAutomationId(copy,"CopyAppId");
+            copy.Margin=new Thickness(0,0,8,0);
+            copy.Click+=(_,_)=>{
+                try
+                {
+                    Clipboard.SetText(one.Id.ToString(CultureInfo.InvariantCulture));
+                    copy.Content="已复制 "+one.Id.ToString(CultureInfo.InvariantCulture);
+                }
+                catch(System.Runtime.InteropServices.ExternalException){d.Error("剪贴板正在使用，请稍后重试。",copy);}
+            };
+            DockPanel.SetDock(copy,Dock.Right);formActions.Children.Add(copy);
+        }
         const string savedLocally="保存到整理方案，应用后写入 Steam。";
         var saveHint=new TextBlock {Text=savedLocally,FontSize=13,TextWrapping=TextWrapping.Wrap,
             VerticalAlignment=VerticalAlignment.Center,Foreground=(Brush)d.FindResource("Muted")};

@@ -47,7 +47,7 @@ def entry(row):
         node.append(inner("name_localized",[string("schinese",zh)]))
     return inner("appinfo",[inner("common",node)])+b"\x08"
 
-for kind in ("v29","v30","large","workbench","facets","dynamic","workspace","direct","selection","tiny","receipt"):
+for kind in ("v29","v30","large","workbench","facets","dynamic","workspace","direct","selection","tiny","receipt","extras"):
     root = ROOT / kind
     cache = root/"appcache"
     cloud = root/"userdata/1/config/cloudstorage"
@@ -77,6 +77,8 @@ for kind in ("v29","v30","large","workbench","facets","dynamic","workspace","dir
     games=list(rows)
     if kind=="tiny":
         games=[rows[1]]
+    if kind=="extras":
+        games=[(646570,"Slay the Spire","备选中文名",[2],[14139,1716])]
     if kind in ("workbench","facets","workspace","direct","selection","receipt"):
         games = [rows[1],
             (9001101, "Amber Archive", "", [], []),
