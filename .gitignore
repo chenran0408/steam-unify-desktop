@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+__pycache__/
+data/
+backups/
+/test-output/
+/wpf-*-publish/
+/release/

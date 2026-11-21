@@ -1,0 +1,244 @@
+<Window x:Class="SteamUnify.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Steam 统译" Width="1170" Height="760" MinWidth="850" MinHeight="550" WindowStartupLocation="CenterScreen" Icon="App.ico" Style="{StaticResource {x:Type Window}}" xml:lang="zh-CN" PreviewKeyDown="WindowKeyDown">
+  <Window.Resources>
+    <Style x:Key="GroupPicker" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox">
+        <Grid>
+          <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+            <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
+              <Border x:Name="Pill" CornerRadius="16" Background="{StaticResource SilverPill}" BorderBrush="#CDD3DC" BorderThickness="1"/>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Pill" Property="BorderBrush" Value="#8F9AAA"/></Trigger>
+                <Trigger Property="IsChecked" Value="True"><Setter TargetName="Pill" Property="BorderBrush" Value="#64748B"/></Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate></ToggleButton.Template>
+          </ToggleButton>
+          <Border x:Name="FocusRing" CornerRadius="16" BorderThickness="1" IsHitTestVisible="False"/>
+          <TextBlock Margin="12,0,28,0" VerticalAlignment="Center" Text="{TemplateBinding SelectionBoxItem}" TextTrimming="CharacterEllipsis" IsHitTestVisible="False"/>
+          <Path Data="M 0,0 L 4,4 8,0" Stroke="{StaticResource Muted}" StrokeThickness="1.4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" IsHitTestVisible="False"/>
+          <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" IsOpen="{TemplateBinding IsDropDownOpen}" Focusable="False">
+            <Border Background="#FBFCFE" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="7" Padding="4" MinWidth="{Binding ActualWidth,RelativeSource={RelativeSource TemplatedParent}}">
+              <ScrollViewer MaxHeight="{TemplateBinding MaxDropDownHeight}" CanContentScroll="True" VerticalScrollBarVisibility="Auto"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer>
+            </Border>
+          </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="FocusRing" Property="BorderBrush" Value="#536180"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="QuietAction" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="#F2F4F7"/><Setter Property="BorderBrush" Value="#D7DCE3"/>
+      <Setter Property="Padding" Value="13,5"/><Setter Property="MinHeight" Value="32"/>
+    </Style>
+    <Style x:Key="HeaderAction" TargetType="Button" BasedOn="{StaticResource QuietAction}">
+      <Setter Property="Background" Value="#94FFFFFF"/><Setter Property="Padding" Value="14,5"/>
+      <Setter Property="MinHeight" Value="36"/><Setter Property="BorderBrush" Value="#D0D6DF"/>
+    </Style>
+    <Style x:Key="TaskNavigation" TargetType="ListBox">
+      <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="0"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/><Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+      <Setter Property="ItemsPanel"><Setter.Value><ItemsPanelTemplate><UniformGrid Rows="1" Columns="3"/></ItemsPanelTemplate></Setter.Value></Setter>
+      <Setter Property="ItemContainerStyle"><Setter.Value><Style TargetType="ListBoxItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="#313D4C"/><Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+          <Border x:Name="Tile" CornerRadius="13" Background="#DFFFFFFF" BorderBrush="#E9FFFFFF" BorderThickness="1" Margin="4,0" Padding="10,5" MinHeight="37">
+            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="#8D9BAA"/></Trigger>
+            <Trigger Property="IsSelected" Value="True"><Setter TargetName="Tile" Property="Background" Value="#2B3543"/><Setter TargetName="Tile" Property="BorderBrush" Value="#2B3543"/><Setter Property="Foreground" Value="White"/></Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="#759ED7"/><Setter TargetName="Tile" Property="BorderThickness" Value="2"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+      </Style></Setter.Value></Setter>
+      <Setter Property="ItemTemplate"><Setter.Value><DataTemplate>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <TextBlock FontFamily="Segoe MDL2 Assets" Text="{Binding Glyph}" VerticalAlignment="Center" FontSize="16" Margin="0,0,10,0"/>
+          <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="2" Text="{Binding Count}" FontFamily="Segoe UI, Microsoft YaHei UI" FontWeight="SemiBold" FontSize="14" Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </Grid>
+      </DataTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="ReasonChip" TargetType="RadioButton">
+      <Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="0,0,5,0"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+        <Border x:Name="Chip" Background="Transparent" BorderBrush="#D6DBE2" BorderThickness="1" CornerRadius="12" Padding="11,3">
+          <ContentPresenter VerticalAlignment="Center"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chip" Property="Background" Value="#DBE3EC"/><Setter TargetName="Chip" Property="BorderBrush" Value="#99A9BC"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="#7B8DA1"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chip" Property="BorderBrush" Value="#354B68"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="GameLink" TargetType="Button">
+      <Setter Property="Foreground" Value="#24394C"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="LinkSurface" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Padding="8,4">
+          <DockPanel>
+            <TextBlock x:Name="Pencil" DockPanel.Dock="Right" Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="6,0,0,0" Visibility="Hidden"/>
+            <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+          </DockPanel>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="LinkSurface" Property="Background" Value="#EEF2F6"/><Setter TargetName="Pencil" Property="Visibility" Value="Visible"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="LinkSurface" Property="BorderBrush" Value="#435471"/><Setter TargetName="Pencil" Property="Visibility" Value="Visible"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+  </Window.Resources>
+  <Grid Background="{StaticResource Moonstone}">
+    <Grid x:Name="LibrarySurface" Margin="19,13,19,8">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <DockPanel Margin="1,0,1,13" LastChildFill="True">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button x:Name="CacheScopeButton" Content="全部缓存 ×" Click="UseLibraryScope" Visibility="Collapsed" Margin="0,0,6,0" Style="{StaticResource QuietAction}" ToolTip="只显示本机账号记录和已安装游戏"/>
+          <Button x:Name="CreateAllGamesButton" Style="{StaticResource HeaderAction}" Click="CreateAllGames" IsEnabled="False" ToolTipService.ShowOnDisabled="True">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock x:Name="AllGamesGlyph" Text="&#xE710;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,7,0"/>
+              <TextBlock x:Name="AllGamesActionLabel" Text="创建「全部游戏」" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="MoreButton" Content="更多 ▾" Style="{StaticResource HeaderAction}" Margin="6,0,0,0" Click="ShowMore">
+            <Button.ContextMenu><ContextMenu Placement="Bottom">
+              <MenuItem x:Name="ScanButton" Header="重新扫描" Click="Rescan"/>
+              <MenuItem x:Name="BulkEditButton" Header="批量编辑勾选的游戏" Click="BulkEdit"/>
+              <MenuItem x:Name="EnrichButton" Header="补全简介并重新分类" Click="EnrichChecked"/>
+              <Separator/>
+              <MenuItem x:Name="BackupsButton" Header="备份与还原" Click="ShowBackups"/>
+              <MenuItem x:Name="SettingsButton" Header="设置" Click="ShowSettings"/>
+              <MenuItem Header="导入与导出">
+                <MenuItem Header="导入旧版整理记录…" Click="ImportRecords"/>
+                <MenuItem x:Name="ExportButton" Header="导出当前列表…" Click="ExportRows"/>
+              </MenuItem>
+              <MenuItem x:Name="WarningsButton" Header="扫描提示" Click="ShowWarnings" Visibility="Collapsed"/>
+            </ContextMenu></Button.ContextMenu>
+          </Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <ListBox x:Name="Navigation" Style="{StaticResource TaskNavigation}" Margin="-4,0,0,0" VerticalAlignment="Center" SelectionChanged="Navigate" AutomationProperties.Name="整理视图"/>
+        </StackPanel>
+      </DockPanel>
+      <Border x:Name="ManagerSurface" Grid.Row="1" Background="#F8FAFC" BorderThickness="1" BorderBrush="#EBFFFFFF" CornerRadius="17" Padding="1">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <DockPanel Margin="13,12,13,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button x:Name="ClassifyButton" Content="一键分类" Style="{StaticResource Primary}" Click="ClassifyChecked" ToolTipService.ShowOnDisabled="True"/>
+              <Button x:Name="TranslateButton" Content="一键翻译" Style="{StaticResource QuietAction}" MinHeight="38" Margin="7,0,0,0" Padding="18,6" FontWeight="SemiBold" Click="TranslateChecked" ToolTipService.ShowOnDisabled="True"/>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,16,0" VerticalAlignment="Center">
+              <Button x:Name="FilterButton" Style="{StaticResource QuietAction}" Click="ToggleFilter" ToolTip="按安装状态或收藏集筛选">
+                <TextBlock x:Name="FilterLabel" Text="筛选" MaxWidth="155" TextTrimming="CharacterEllipsis"/>
+              </Button>
+              <Button x:Name="ClearFiltersButton" Content="×" AutomationProperties.Name="清除筛选" ToolTip="清除筛选" Style="{StaticResource QuietAction}" Margin="3,0,0,0" Padding="9,3" Visibility="Collapsed" Click="ClearFacets"/>
+            </StackPanel>
+            <Grid>
+              <TextBox x:Name="Search" AutomationProperties.Name="搜索游戏" Padding="33,5,32,5" TextChanged="SearchChanged" DataObject.Pasting="PasteSearch" ToolTip="按名称、标签或 AppID 搜索，空格可组合关键词（Ctrl+F）&#x0a;查找多款游戏时，可粘贴用空格、逗号或换行分隔的 AppID。"/>
+              <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource Muted}" Margin="11,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+              <TextBlock x:Name="SearchHint" Text="搜索游戏" Foreground="{StaticResource Muted}" Margin="33,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" IsHitTestVisible="False"/>
+              <Button x:Name="ClearSearchButton" Content="×" Click="ClearSearch" AutomationProperties.Name="清除搜索" ToolTip="清除搜索（Esc）" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0" Width="25" Height="25" MinHeight="0" Padding="0" Background="Transparent" BorderThickness="0" Visibility="Collapsed"/>
+            </Grid>
+          </DockPanel>
+          <StackPanel x:Name="FilterPanel" Grid.Row="1" Orientation="Horizontal" Margin="15,0,14,10" Visibility="Collapsed">
+            <CheckBox x:Name="InstalledFilter" Content="仅已安装" Margin="0,0,15,0" Checked="FacetChanged" Unchecked="FacetChanged"/>
+            <ComboBox x:Name="GroupFilter" Style="{StaticResource GroupPicker}" Width="165" SelectionChanged="FacetChanged" AutomationProperties.Name="按建议收藏集筛选"/>
+          </StackPanel>
+          <StackPanel x:Name="ReviewReasonBar" Grid.Row="2" Orientation="Horizontal" Visibility="Collapsed" Margin="15,0,14,10">
+            <RadioButton x:Name="ReviewAll" GroupName="ReviewReasons" Style="{StaticResource ReasonChip}" Content="全部" IsChecked="True" Checked="ReasonChanged"/>
+            <RadioButton x:Name="ReviewMissingName" GroupName="ReviewReasons" Style="{StaticResource ReasonChip}" Content="缺中文名" Checked="ReasonChanged"/>
+            <RadioButton x:Name="ReviewMissingGroup" GroupName="ReviewReasons" Style="{StaticResource ReasonChip}" Content="待选收藏集" Checked="ReasonChanged"/>
+            <RadioButton x:Name="ReviewMachine" GroupName="ReviewReasons" Style="{StaticResource ReasonChip}" Content="核对机翻" Checked="ReasonChanged"/>
+          </StackPanel>
+          <Grid Grid.Row="3" Background="White">
+            <DataGrid x:Name="LibraryGrid" PreviewKeyDown="GridSelectionKeys" IsReadOnly="True" RowHeight="44" Background="White" HorizontalGridLinesBrush="#E0E5EB"
+                      SelectionMode="Single" SelectionUnit="Cell" AutomationProperties.Name="游戏建议列表">
+              <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                  <Setter Property="BorderThickness" Value="1"/>
+                  <Setter Property="BorderBrush" Value="Transparent"/>
+                  <Setter Property="Background" Value="White"/>
+                  <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                  <EventSetter Event="PreviewMouseLeftButtonDown" Handler="PickGameCell"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding Picked}" Value="True"><Setter Property="Background" Value="#EAF1F7"/></DataTrigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#68839C"/></Trigger>
+                  </Style.Triggers>
+                </Style>
+              </DataGrid.CellStyle>
+            <DataGrid.Columns>
+              <DataGridTemplateColumn Width="43" CanUserSort="False"><DataGridTemplateColumn.HeaderTemplate><DataTemplate>
+                <CheckBox x:Name="SelectAllBox" Loaded="HeaderLoaded" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" ToolTip="勾选或清除当前列表" AutomationProperties.Name="勾选当前列表" Checked="ToggleVisible" Unchecked="ToggleVisible"/>
+              </DataTemplate></DataGridTemplateColumn.HeaderTemplate><DataGridTemplateColumn.Header><TextBlock Text=""/></DataGridTemplateColumn.Header>
+              <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox PreviewMouseLeftButtonDown="RangePick" Click="PickAnchor" IsChecked="{Binding Picked,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" AutomationProperties.Name="{Binding SelectLabel}" HorizontalAlignment="Center" VerticalAlignment="Center" SourceUpdated="RowChecked"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="游戏" Width="1.4*" MinWidth="136" SortMemberPath="Game.Name"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                <Button Content="{Binding Game.Name}" Style="{StaticResource GameLink}" Margin="1,0,5,0" VerticalAlignment="Center" IsEnabled="{DynamicResource RowEditingAllowed}"
+                        AutomationProperties.AutomationId="{Binding Id, StringFormat=RowEdit_{0}}" AutomationProperties.Name="{Binding Game.Name, StringFormat=编辑 {0}}" Click="EditRow">
+                  <Button.ToolTip><StackPanel><TextBlock Text="{Binding Game.Name}"/><TextBlock Text="{Binding IdLabel}"/><TextBlock Text="点击编辑"/></StackPanel></Button.ToolTip>
+                </Button>
+              </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="中文名" Width="1.2*" MinWidth="135" SortMemberPath="Name"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                <DockPanel Margin="10,0" HorizontalAlignment="Left">
+                  <Border DockPanel.Dock="Right" CornerRadius="7" Padding="7,2" Margin="5,0,0,0" Background="#FAEDD5" VerticalAlignment="Center">
+                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding MachineReview}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                    <TextBlock Text="核对机翻" Foreground="#704A17"/>
+                  </Border>
+                  <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                    <TextBlock.ToolTip><StackPanel><TextBlock Text="{Binding DisplayName}"/><TextBlock Text="{Binding SourceLabel}"/></StackPanel></TextBlock.ToolTip>
+                  </TextBlock>
+                </DockPanel>
+              </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="收藏集" Width="*" MinWidth="116" SortMemberPath="Group"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                <TextBlock Text="{Binding DisplayGroup}" Style="{StaticResource CellText}" ToolTip="{Binding DisplayGroup}"/>
+              </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+            </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel x:Name="EmptyPanel" Visibility="Collapsed" Background="White" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="490" Margin="20,33,20,8">
+              <TextBlock x:Name="EmptyTitle" Text="暂无游戏" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+              <TextBlock x:Name="EmptyDetail" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,9" Foreground="{StaticResource Muted}"/>
+              <Button x:Name="EmptyButton" Style="{StaticResource QuietAction}" HorizontalAlignment="Center" Click="EmptyAction"/>
+            </StackPanel>
+          </Grid>
+          <Border Grid.Row="4" CornerRadius="0,0,16,16" Background="#F1F4F8" BorderBrush="#CED6E0" BorderThickness="0,1,0,0" Padding="13,9">
+            <DockPanel>
+              <Button x:Name="PreviewButton" DockPanel.Dock="Right" Content="预览更改" Style="{StaticResource QuietAction}" Click="ShowPreview" ToolTipService.ShowOnDisabled="True"/>
+              <StackPanel Orientation="Horizontal">
+                <Button x:Name="BatchSelectButton" Content="批量勾选 ▾" Style="{StaticResource QuietAction}" Click="ChooseSelection" ToolTip="点中文名或收藏集可单选，Ctrl 加选，Shift 连选。"/>
+                <TextBlock x:Name="SelectionSummary" Margin="12,0,0,0" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </DockPanel>
+          </Border>
+        </Grid>
+      </Border>
+      <StackPanel x:Name="Activity" Grid.Row="2" Margin="4,5,4,0">
+        <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions>
+          <Condition Binding="{Binding Text,ElementName=StatusText}" Value=""/>
+          <Condition Binding="{Binding Visibility,ElementName=LastBackupButton}" Value="Collapsed"/>
+          <Condition Binding="{Binding Visibility,ElementName=StopButton}" Value="Collapsed"/>
+          <Condition Binding="{Binding Text,ElementName=CandidateStatus}" Value=""/>
+          <Condition Binding="{Binding Visibility,ElementName=CandidateReviewButton}" Value="Collapsed"/>
+          <Condition Binding="{Binding Visibility,ElementName=TaskProgress}" Value="Collapsed"/>
+        </MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Collapsed"/></MultiDataTrigger></Style.Triggers></Style></StackPanel.Style>
+        <DockPanel MinHeight="23">
+        <Button x:Name="LastBackupButton" DockPanel.Dock="Right" Style="{StaticResource QuietAction}" FontSize="14" Padding="10,2" MinHeight="24" Content="查看本次备份" Visibility="Collapsed" Click="ShowLastBackup"/>
+        <Button x:Name="StopButton" DockPanel.Dock="Right" Style="{StaticResource QuietAction}" Margin="0,0,6,0" Padding="10,2" MinHeight="24" Content="停止" Visibility="Collapsed" Click="Stop"/>
+        <Button x:Name="CandidateReviewButton" DockPanel.Dock="Right" Style="{StaticResource QuietAction}" FontSize="14" Margin="4,0,8,0" Padding="10,2" MinHeight="24" Visibility="Collapsed" Click="ReviewCandidateNames"/>
+        <TextBlock x:Name="CandidateStatus" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="4,0,8,0" Foreground="{StaticResource Muted}"/>
+        <TextBlock x:Name="StatusText" Foreground="#435263" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding RelativeSource={RelativeSource Self},Path=Text}"/>
+        </DockPanel>
+        <ProgressBar x:Name="TaskProgress" AutomationProperties.Name="任务进度" Minimum="0" Maximum="1" Height="6" Margin="0,4,0,1" Foreground="#365B76" Background="#DCE3EA" BorderThickness="0" Visibility="Collapsed"/>
+      </StackPanel>
+    </Grid>
+    <GroupBox x:Name="InPageHost" AutomationProperties.AutomationId="InPageHost" Margin="19,13,19,12" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+      <GroupBox.Template><ControlTemplate TargetType="GroupBox">
+        <Border CornerRadius="17" Background="#FAFBFC" BorderBrush="White" BorderThickness="1" Padding="3">
+          <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        </Border>
+      </ControlTemplate></GroupBox.Template>
+    </GroupBox>
+  </Grid>
+</Window>

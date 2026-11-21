@@ -1,0 +1,114 @@
+<Application x:Class="SteamUnify.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Application.Resources>
+    <SolidColorBrush x:Key="Ink" Color="#1C2028"/>
+    <SolidColorBrush x:Key="Muted" Color="#566070"/>
+    <SolidColorBrush x:Key="Line" Color="#CFD3DA"/>
+    <SolidColorBrush x:Key="Accent" Color="#232630"/>
+    <LinearGradientBrush x:Key="Moonstone" StartPoint="0,0" EndPoint="1,.92">
+      <GradientStop Color="#CDD1D9" Offset="0"/><GradientStop Color="#E8EDF4" Offset=".39"/>
+      <GradientStop Color="#E2E4EB" Offset=".70"/><GradientStop Color="#C7CBD4" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Porcelain" StartPoint="0,0" EndPoint=".72,1">
+      <GradientStop Color="#FCFFFFFF" Offset="0"/><GradientStop Color="#EAF6F7FB" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SilverPill" StartPoint="0,0" EndPoint=".18,1">
+      <GradientStop Color="#EFF5F6FA" Offset="0"/><GradientStop Color="#DADFE3EB" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InkPill" StartPoint="0,0" EndPoint=".11,1">
+      <GradientStop Color="#41444B" Offset="0"/><GradientStop Color="#202228" Offset=".42"/><GradientStop Color="#111218" Offset="1"/>
+    </LinearGradientBrush>
+    <Style TargetType="Window">
+      <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI"/>
+      <Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="Background" Value="{StaticResource Moonstone}"/>
+      <Setter Property="TextOptions.TextFormattingMode" Value="Display"/><Setter Property="UseLayoutRounding" Value="True"/>
+    </Style>
+    <Style TargetType="Button">
+      <Setter Property="Background" Value="{StaticResource SilverPill}"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="BorderBrush" Value="#F5FFFFFF"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="16,7"/><Setter Property="MinHeight" Value="34"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="Shell" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="19" Padding="{TemplateBinding Padding}">
+          <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Shell" Property="BorderBrush" Value="#909BAC"/></Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Shell" Property="Opacity" Value=".76"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Shell" Property="BorderBrush" Value="#435471"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Shell" Property="Opacity" Value=".46"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="{StaticResource InkPill}"/>
+      <Setter Property="BorderBrush" Value="#484C55"/><Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="MinHeight" Value="38"/><Setter Property="Padding" Value="22,8"/>
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="BorderBrush" Value="#C9CED8"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Background" Value="#E9FFFFFF"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="Padding" Value="12,7"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+        <Border x:Name="Field" CornerRadius="16" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+          <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Focusable="False"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Field" Property="BorderBrush" Value="#536180"/></Trigger>
+          <Trigger Property="IsReadOnly" Value="True"><Setter TargetName="Field" Property="Background" Value="#E8EBEF"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style TargetType="ComboBox">
+      <Setter Property="Background" Value="{StaticResource SilverPill}"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Line}"/><Setter Property="MinHeight" Value="34"/>
+    </Style>
+    <Style TargetType="ListBox">
+      <Setter Property="Background" Value="#EFF5F6F9"/><Setter Property="BorderBrush" Value="White"/><Setter Property="Padding" Value="5"/>
+    </Style>
+    <Style TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+        <StackPanel Orientation="Horizontal" Background="Transparent">
+          <Grid Width="16" Height="16" VerticalAlignment="Center">
+            <Border x:Name="Box" Background="White" BorderBrush="#939CAA" CornerRadius="4" BorderThickness="1"/>
+            <Path x:Name="Mark" Data="M 3.6,8.1 L 6.6,11.1 L 12.1,5.1" Stroke="White" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
+            <Rectangle x:Name="Dash" Width="8" Height="2" Fill="White" RadiusX="1" RadiusY="1" Visibility="Collapsed"/>
+          </Grid>
+          <ContentPresenter x:Name="Caption" Margin="7,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+        </StackPanel>
+        <ControlTemplate.Triggers>
+          <Trigger Property="Content" Value="{x:Null}"><Setter TargetName="Caption" Property="Visibility" Value="Collapsed"/></Trigger>
+          <Trigger Property="IsChecked" Value="True"><Setter TargetName="Box" Property="Background" Value="#424B5A"/><Setter TargetName="Box" Property="BorderBrush" Value="#424B5A"/><Setter TargetName="Mark" Property="Visibility" Value="Visible"/></Trigger>
+          <Trigger Property="IsChecked" Value="{x:Null}"><Setter TargetName="Box" Property="Background" Value="#586273"/><Setter TargetName="Dash" Property="Visibility" Value="Visible"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="#4673A5"/><Setter TargetName="Box" Property="BorderThickness" Value="2"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".48"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style TargetType="ContextMenu"><Setter Property="Background" Value="#FBFCFE"/><Setter Property="BorderBrush" Value="#CBD0D9"/><Setter Property="Padding" Value="4"/></Style>
+    <Style TargetType="DataGrid">
+      <Setter Property="EnableRowVirtualization" Value="True"/><Setter Property="EnableColumnVirtualization" Value="True"/>
+      <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+      <Setter Property="AutoGenerateColumns" Value="False"/><Setter Property="CanUserAddRows" Value="False"/>
+      <Setter Property="CanUserDeleteRows" Value="False"/><Setter Property="CanUserReorderColumns" Value="False"/>
+      <Setter Property="CanUserResizeRows" Value="False"/><Setter Property="HeadersVisibility" Value="Column"/>
+      <Setter Property="GridLinesVisibility" Value="Horizontal"/><Setter Property="HorizontalGridLinesBrush" Value="#DCE1E8"/>
+      <Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="#EFF7F8FB"/>
+      <Setter Property="RowBackground" Value="Transparent"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+    </Style>
+    <Style TargetType="DataGridColumnHeader">
+      <Setter Property="Padding" Value="10,9"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#51596A"/><Setter Property="Background" Value="#E9ECF2"/>
+      <Setter Property="BorderBrush" Value="#CED4DE"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+    <Style TargetType="DataGridCell">
+      <Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="8,0"/>
+      <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#D8E0ED"/><Setter Property="Foreground" Value="#202735"/></Trigger></Style.Triggers>
+    </Style>
+    <Style x:Key="CellText" TargetType="TextBlock">
+      <Setter Property="Margin" Value="10,0"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+  </Application.Resources>
+</Application>

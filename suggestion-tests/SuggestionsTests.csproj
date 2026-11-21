@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../SteamUnify2/Suggestions.cs;../SteamUnify2/CollectionRules.cs;../SteamUnify2/SuggestionLookup.cs;../SteamUnify2/LibraryAnalysis.cs" />
+    <Content Include="../SteamUnify2/Resources/*.json" Link="Resources/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
