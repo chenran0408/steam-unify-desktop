@@ -20,7 +20,8 @@ TITLE = f"SteamUnify-{VERSION}"
 RESOURCES = ("category_model.json", "genres_zh.json", "heybox_names.json", "official_names.json", "tag_names_zh.json")
 DOC_ASSETS = ("docs/images/library.png", "docs/images/translation.png", "docs/translation-sources-2.8.1.csv",
               "docs/popular-game-name-sources-2.8.2.csv", "docs/expanded-game-name-sources-2.8.3.csv",
-              "docs/heybox-name-sources-2.8.4.csv", "docs/heybox-name-sources-2.8.5.csv")
+              "docs/heybox-name-sources-2.8.4.csv", "docs/heybox-name-sources-2.8.5.csv",
+              "docs/heybox-name-sources-2.8.6.csv")
 TESTS = {
     "suggestion-tests": ("SuggestionsTests.csproj",),
     "io-tests": ("IoTests.csproj",),

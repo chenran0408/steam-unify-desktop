@@ -9,7 +9,7 @@
     <RootNamespace>SteamUnify</RootNamespace>
     <AssemblyTitle>Steam 统译</AssemblyTitle>
     <Product>Steam 统译</Product>
-    <Version>2.8.5</Version>
+    <Version>2.8.6</Version>
     <ApplicationIcon>App.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
